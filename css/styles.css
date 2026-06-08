@@ -585,3 +585,27 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border:none;border-ra
   .ar-map-cv{width:88px;height:88px}
   .ar-top{padding-top:44px}
 }
+
+/* ── Panel identification PlantNet hors-session AR ──
+   S'affiche par-dessus la vue 2D, pas besoin de XR */
+.ar-id-panel{
+  position:fixed;inset:0;z-index:1500;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(0,0,0,.7);backdrop-filter:blur(8px);
+  font-family:'Outfit',sans-serif;padding:16px;
+}
+.ar-id-card{
+  background:var(--ink,#1a1f1a);border:1px solid rgba(255,255,255,.14);
+  border-radius:16px;padding:20px;width:100%;max-width:380px;
+  color:#fff;display:flex;flex-direction:column;gap:8px;
+  max-height:90dvh;overflow-y:auto;
+}
+.ar-id-title{
+  font-size:16px;font-weight:600;color:var(--cream,#f4f0e8);
+}
+.ar-id-sub{
+  font-size:12px;color:rgba(255,255,255,.5);
+}
+.ar-id-row{
+  display:flex;gap:8px;
+}
