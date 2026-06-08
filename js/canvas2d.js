@@ -159,9 +159,6 @@ function draw(){
   const sorted=[...S.elements].sort((a,b)=>order.indexOf(a.type)-order.indexOf(b.type));
   sorted.forEach(el=>drawEl(el));
 
-  // Marqueurs de calibration AR (coins A/B) — dessinés par ar-webxr.js si disponible
-  if(typeof drawARRefMarkers==='function') drawARRefMarkers();
-
   updateCompass2d();
 }
 

@@ -152,7 +152,6 @@ function renderPanel(){
         ${photoBlock('hedge')}
         <div class="field"><label>Hauteur (m) — optionnel</label><input type="number" id="hH" placeholder="1.8" min=".3" step=".1"></div>
         <button class="btn btn-sage" onclick="addHedge()" style="margin-top:4px">✏ Tracer une haie</button>
-        <button class="btn btn-ghost" id="btnARHedge" style="display:none;margin-top:4px" onclick="arPlaceSelected('hedge')">🌿 Placer en AR</button>
         <details style="margin-top:10px"><summary style="font-size:11px;color:rgba(255,255,255,.4);cursor:pointer">Saisir des dimensions exactes</summary>
           <div class="row2" style="margin-top:8px">
             <div class="field"><label>Long. (m)</label><input type="number" id="hW" placeholder="auto" min=".5" step=".5"></div>
@@ -163,7 +162,6 @@ function renderPanel(){
       ${els_hedge.length?`<div class="items-section"><div class="items-title">${els_hedge.length} haie(s)</div>${itemsList(els_hedge)}</div>`:''}
     `;
     pf.innerHTML=back+next;
-    if(typeof arShowSidebarBtn==='function') arShowSidebarBtn('hedge');
   }
 
   else if(S.step===ST.ARBRE){
@@ -193,12 +191,10 @@ function renderPanel(){
         </div>
         <div class="spread-badge">🌳 ${TREE_DATA[selType]?.form==='cone'?'Port conique':TREE_DATA[selType]?.form==='column'?'Port colonnaire':TREE_DATA[selType]?.form==='palm'?'Palmiforme':TREE_DATA[selType]?.form==='narrow'?'Port élancé':TREE_DATA[selType]?.form==='weeping'?'Port pleureur':'Port arrondi'}${TREE_DATA[selType]?.custom?' · espèce ajoutée (GBIF)':''}</div>
         <button class="btn btn-sage" onclick="addTree()" style="margin-top:10px">Ajouter et placer</button>
-        <button class="btn btn-ghost" id="btnARTree" style="display:none;margin-top:4px" onclick="arPlaceSelected('tree')">🌿 Placer en AR</button>
       </div>
       ${els_tree.length?`<div class="items-section"><div class="items-title">${els_tree.length} arbre(s)</div>${itemsList(els_tree)}</div>`:''}
     `;
     pf.innerHTML=back+next;
-    if(typeof arShowSidebarBtn==='function') arShowSidebarBtn('tree');
   }
 
   else if(S.step===ST.GAZON){
@@ -239,12 +235,6 @@ function renderPanel(){
     `;
     pf.innerHTML=`<button class="btn btn-ghost" onclick="jumpStep(0)">↩ Modifier</button>`;
     document.getElementById('viewSwitch').style.display='flex';
-    // Affiche le bouton AR si WebXR immersive-ar disponible (Android + HTTPS)
-    arInitBtn().then(()=>{
-      const btn=document.getElementById('vsAR');
-      const div=document.getElementById('vsARDiv');
-      if(btn&&div) div.style.display=btn.style.display;
-    });
     updateStats();
   }
 
