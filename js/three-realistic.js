@@ -6,6 +6,38 @@
 // ════════════════════════════════════════════════════════════
 // 3D+ REALISTIC
 // ════════════════════════════════════════════════════════════
+// Ciel en dégradé (texture canvas) — sert au dôme ET à l'éclairage d'ambiance (IBL).
+function makeSkyTexture(){
+  const cv=document.createElement('canvas');cv.width=64;cv.height=512;
+  const g=cv.getContext('2d');
+  const grd=g.createLinearGradient(0,0,0,512);
+  grd.addColorStop(0,'#3a6fb0');     // zénith
+  grd.addColorStop(0.45,'#7fb0dd');
+  grd.addColorStop(0.78,'#cfe2ef');
+  grd.addColorStop(1,'#eaf1f4');     // horizon pâle
+  g.fillStyle=grd;g.fillRect(0,0,64,512);
+  const t=new THREE.CanvasTexture(cv);
+  t.encoding=THREE.sRGBEncoding;
+  return t;
+}
+// Texture d'herbe procédurale (mouchetis de verts) — répétée sur le sol.
+function makeGrassTexture(){
+  const cv=document.createElement('canvas');cv.width=256;cv.height=256;
+  const g=cv.getContext('2d');
+  g.fillStyle='#4e8a3c';g.fillRect(0,0,256,256);
+  const tones=['#3f7a32','#5a9a45','#4e8a3c','#6aa850','#46813a','#3a6e2e'];
+  for(let i=0;i<5000;i++){
+    g.globalAlpha=0.35+Math.random()*0.4;
+    g.fillStyle=tones[(Math.random()*tones.length)|0];
+    g.fillRect(Math.random()*256,Math.random()*256,1.3,2.6);
+  }
+  g.globalAlpha=1;
+  const t=new THREE.CanvasTexture(cv);
+  t.wrapS=t.wrapT=THREE.RepeatWrapping;
+  t.encoding=THREE.sRGBEncoding;
+  return t;
+}
+
 function initRealistic3d(){
   const area=document.querySelector('.canvas-area');
   const c=document.getElementById('c3d');
@@ -17,6 +49,8 @@ function initRealistic3d(){
   renderer.shadowMap.enabled=true;
   renderer.shadowMap.type=THREE.PCFSoftShadowMap;
   renderer.outputEncoding=THREE.sRGBEncoding;
+  renderer.toneMapping=THREE.ACESFilmicToneMapping;   // rendu « filmique » plus réaliste
+  renderer.toneMappingExposure=1.0;
   c.appendChild(renderer.domElement);
 
   const scene=new THREE.Scene();
@@ -27,30 +61,40 @@ function initRealistic3d(){
   orbit.radius=Math.max(S.garden.w,S.garden.h)*1.6;
   updateOrbitCamera(cam);
 
-  // Sky dome
-  const sky=new THREE.Mesh(new THREE.SphereGeometry(400,16,12),
-    new THREE.MeshBasicMaterial({color:0x87b8de,side:THREE.BackSide}));
+  // Ciel en dégradé (non affecté par le brouillard pour rester visible)
+  const skyTex=makeSkyTexture();
+  const sky=new THREE.Mesh(new THREE.SphereGeometry(400,24,16),
+    new THREE.MeshBasicMaterial({map:skyTex,side:THREE.BackSide,fog:false}));
   scene.add(sky);
 
-  // Lighting
-  const hemi=new THREE.HemisphereLight(0xbfe0ff,0x4a6a3a,1.1);
+  // Éclairage d'ambiance réaliste (IBL) calculé depuis le ciel → reflets + lumière douce
+  const pmrem=new THREE.PMREMGenerator(renderer);
+  pmrem.compileEquirectangularShader();
+  const envSrc=makeSkyTexture();envSrc.mapping=THREE.EquirectangularReflectionMapping;
+  scene.environment=pmrem.fromEquirectangular(envSrc).texture;
+  pmrem.dispose();envSrc.dispose();
+
+  // Lighting (allégé car l'IBL fournit déjà l'ambiance ; le soleil porte les ombres)
+  const hemi=new THREE.HemisphereLight(0xbfe0ff,0x556b3a,0.5);
   scene.add(hemi);
-  const sun=new THREE.DirectionalLight(0xfff4e0,2.3);
+  const sun=new THREE.DirectionalLight(0xfff4e0,2.2);
   sun.position.set(S.garden.w*0.7,Math.max(S.garden.w,S.garden.h)*1.1,-S.garden.h*0.4);
   sun.castShadow=true;
   const sd=Math.max(S.garden.w,S.garden.h);
-  sun.shadow.mapSize.set(1024,1024);
+  sun.shadow.mapSize.set(2048,2048);
   sun.shadow.camera.left=-sd; sun.shadow.camera.right=sd;
   sun.shadow.camera.top=sd; sun.shadow.camera.bottom=-sd;
   sun.shadow.camera.near=1; sun.shadow.camera.far=sd*4;
-  sun.shadow.bias=-0.0008;
+  sun.shadow.bias=-0.0005; sun.shadow.normalBias=0.02; sun.shadow.radius=3;
   scene.add(sun);
-  scene.add(new THREE.AmbientLight(0xffffff,0.35));
+  scene.add(new THREE.AmbientLight(0xffffff,0.12));
 
-  // Ground (grass) — rectangle ou polygone
+  // Ground (grass texturé) — rectangle ou polygone
+  const grassTex=makeGrassTexture();
+  grassTex.repeat.set(0.5,0.5);   // ~tuile de 2 m (UV en mètres)
   const ground=new THREE.Mesh(
     gardenGroundGeometry(),
-    new THREE.MeshStandardMaterial({color:0x4f8a3e,roughness:1,metalness:0})
+    new THREE.MeshStandardMaterial({map:grassTex,roughness:1,metalness:0})
   );
   ground.position.y=0;
   ground.receiveShadow=true;
@@ -64,6 +108,18 @@ function initRealistic3d(){
   scene.add(around);
 
   S.elements.forEach(el=>add3dRealistic(scene,el));
+
+  // three r128 ne décode pas les couleurs sRGB des matériaux → on convertit en linéaire
+  // (sinon les verts foncés rendent délavés), et on calme l'intensité de l'IBL.
+  scene.traverse(o=>{
+    if(!o.material) return;
+    (Array.isArray(o.material)?o.material:[o.material]).forEach(m=>{
+      if(m.map) return;                      // textures déjà décodées (encoding sRGB)
+      if(m.color) m.color.convertSRGBToLinear();
+      if(m.emissive) m.emissive.convertSRGBToLinear();
+      if('envMapIntensity' in m) m.envMapIntensity=0.5;
+    });
+  });
 
   scene.userData.sun=sun;
   three={renderer,scene,cam,raf:null};
@@ -79,13 +135,16 @@ function initRealistic3d(){
 
 function add3dRealistic(scene,el){
   if(el.type==='lawn'){
+    if(el.fill) return;          // le sol est déjà une herbe texturée → gazon de fond inutile en réaliste
+    const gt=makeGrassTexture();
+    const mat=new THREE.MeshStandardMaterial({map:gt,roughness:1});
     if(el.poly){
-      const m=new THREE.Mesh(shapeGeomFromPoly(el.poly),
-        new THREE.MeshStandardMaterial({color:0x57994a,roughness:1}));
+      gt.repeat.set(0.5,0.5);
+      const m=new THREE.Mesh(shapeGeomFromPoly(el.poly),mat);
       m.position.y=.02;m.receiveShadow=true;scene.add(m);
     } else {
-      const m=new THREE.Mesh(new THREE.PlaneGeometry(el.w,el.d),
-        new THREE.MeshStandardMaterial({color:0x57994a,roughness:1}));
+      gt.repeat.set(Math.max(1,el.w/2),Math.max(1,el.d/2));
+      const m=new THREE.Mesh(new THREE.PlaneGeometry(el.w,el.d),mat);
       m.rotation.x=-Math.PI/2;m.position.set(el.x+el.w/2,.02,el.y+el.d/2);
       m.receiveShadow=true;scene.add(m);
     }
