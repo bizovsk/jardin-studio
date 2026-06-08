@@ -216,26 +216,39 @@ cv.addEventListener('wheel',e=>{
 },{passive:false});
 
 // ── Tactile (mobile / tablette) ──
-let pinch=null,lastTouchPt=null;
+// 1 doigt = comme la souris (sélection / déplacement / pan / tracé).
+// 2 doigts = manipulation du plan facon carte : pincer pour zoomer ET pivoter
+//            (rotation des 2 doigts = équivalent du bouton du milieu), point médian ancré.
+let gesture=null,lastTouchPt=null;
+function twoFingerState(e){
+  const a=ptFromTouch(e.touches[0]),b=ptFromTouch(e.touches[1]);
+  return {dist:Math.hypot(a.ox-b.ox,a.oy-b.oy), ang:Math.atan2(b.oy-a.oy,b.ox-a.ox), mx:(a.ox+b.ox)/2, my:(a.oy+b.oy)/2};
+}
 cv.addEventListener('touchstart',e=>{
   if(e.touches.length===2){
-    // début d'un pincement : on annule toute interaction à un doigt
+    // démarrage 2 doigts : on annule toute interaction à un doigt
     dragging=false;dragEl=null;dragElStart=null;resizeEl=null;resizeData=null;drawZone=null;drawPath=null;
-    const a=ptFromTouch(e.touches[0]),b=ptFromTouch(e.touches[1]);
-    pinch={dist:Math.hypot(a.ox-b.ox,a.oy-b.oy),cx:(a.ox+b.ox)/2,cy:(a.oy+b.oy)/2};
+    gesture=twoFingerState(e);
   } else if(e.touches.length===1){
-    pinch=null;lastTouchPt=ptFromTouch(e.touches[0]);
+    gesture=null;lastTouchPt=ptFromTouch(e.touches[0]);
     pointerDown(lastTouchPt);
   }
   e.preventDefault();
 },{passive:false});
 cv.addEventListener('touchmove',e=>{
-  if(pinch&&e.touches.length===2){
-    const a=ptFromTouch(e.touches[0]),b=ptFromTouch(e.touches[1]);
-    const dist=Math.hypot(a.ox-b.ox,a.oy-b.oy);
-    const cx=(a.ox+b.ox)/2,cy=(a.oy+b.oy)/2;
-    if(pinch.dist>0)zoomAt(cx,cy,dist/pinch.dist);
-    pinch.dist=dist;
+  if(gesture&&e.touches.length===2){
+    const g=twoFingerState(e);
+    // point monde sous le médian AVANT transformation (pour l'ancrer)
+    const W=s2w(g.mx,g.my);
+    if(gesture.dist>0) CAM.scale=Math.max(3,Math.min(120,CAM.scale*(g.dist/gesture.dist)));
+    CAM.rot+=(g.ang-gesture.ang);                 // rotation des 2 doigts → orientation du plan
+    // garder le point médian fixe sous les doigts
+    const c=Math.cos(CAM.rot), s=Math.sin(CAM.rot);
+    const rwx=CAM.pivot.x+(W.x-CAM.pivot.x)*c-(W.y-CAM.pivot.y)*s;
+    const rwy=CAM.pivot.y+(W.x-CAM.pivot.x)*s+(W.y-CAM.pivot.y)*c;
+    CAM.x=g.mx-CAM.scale*rwx; CAM.y=g.my-CAM.scale*rwy;
+    draw();
+    gesture=g;
   } else if(e.touches.length===1){
     lastTouchPt=ptFromTouch(e.touches[0]);
     pointerMove(lastTouchPt);
@@ -243,7 +256,7 @@ cv.addEventListener('touchmove',e=>{
   e.preventDefault();
 },{passive:false});
 cv.addEventListener('touchend',e=>{
-  if(pinch&&e.touches.length<2)pinch=null;
+  if(gesture&&e.touches.length<2)gesture=null;
   if(e.touches.length===0){
     pointerUp(lastTouchPt);
     lastTouchPt=null;

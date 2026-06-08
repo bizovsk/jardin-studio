@@ -30,6 +30,21 @@ function toast(msg){
   clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2000);
 }
 
+// Bloc « identifier par photo » (Pl@ntNet) — partagé Arbres / Haies. Les candidats s'affichent
+// dans le conteneur de résultats de la recherche (#${kind}SearchResults).
+function photoBlock(kind){
+  const k=getPlantNetKey();
+  return `<div class="field">
+    <label>📷 Ou identifier par photo (Pl@ntNet)</label>
+    <input type="file" id="${kind}Photo" accept="image/*" capture="environment" style="display:none" onchange="runPhotoId('${kind}',this.files[0]);this.value=''">
+    <button class="btn btn-ghost" style="width:100%" onclick="document.getElementById('${kind}Photo').click()">📷 Prendre / choisir une photo</button>
+    <details style="margin-top:6px"><summary style="font-size:10.5px;color:rgba(255,255,255,.4);cursor:pointer">⚙ Clé API Pl@ntNet ${k?'✓':'(requise)'}</summary>
+      <input type="password" placeholder="colle ta clé Pl@ntNet" value="${k}" oninput="setPlantNetKey(this.value)" style="margin-top:6px">
+      <div style="font-size:10px;color:rgba(255,255,255,.35);margin-top:4px;line-height:1.5">Compte gratuit sur my.plantnet.org. Clé stockée uniquement sur cet appareil.</div>
+    </details>
+  </div>`;
+}
+
 // ════════════════════════════════════════════════════════════
 // PANEL / SIDEBAR RENDERING
 // ════════════════════════════════════════════════════════════
@@ -134,6 +149,7 @@ function renderPanel(){
           <input type="text" id="hedgeSearch" placeholder="ex : cornouiller sanguin, viorne…" autocomplete="off" oninput="searchSpecies('hedge',this.value)">
           <div id="hedgeSearchResults" class="search-results"></div>
         </div>
+        ${photoBlock('hedge')}
         <div class="field"><label>Hauteur (m) — optionnel</label><input type="number" id="hH" placeholder="1.8" min=".3" step=".1"></div>
         <button class="btn btn-sage" onclick="addHedge()" style="margin-top:4px">✏ Tracer une haie</button>
         <details style="margin-top:10px"><summary style="font-size:11px;color:rgba(255,255,255,.4);cursor:pointer">Saisir des dimensions exactes</summary>
@@ -168,6 +184,7 @@ function renderPanel(){
           <input type="text" id="treeSearch" placeholder="ex : séquoia, jacaranda, ginkgo…" autocomplete="off" oninput="searchSpecies('tree',this.value)">
           <div id="treeSearchResults" class="search-results"></div>
         </div>
+        ${photoBlock('tree')}
         <div class="row2">
           <div class="field"><label>Hauteur (m)</label><input type="number" id="tH" placeholder="5" min=".5" step=".5" value="${th}" oninput="renderPanel()"></div>
           <div class="field"><label>Frondaison auto</label><input type="text" value="⌀ ${autoSpread}m" disabled style="opacity:.6"></div>
