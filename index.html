@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Jardin Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div class="app">
+
+<!-- ══════════════════ PANEL ══════════════════ -->
+<div class="panel">
+  <div class="panel-head">
+    <div class="brand">
+
+      <div class="brand-leaf">🌿</div>
+      <div>
+        <h1>Jardin Studio</h1>
+        <span>Modélisateur</span>
+      </div>
+    </div>
+    <div class="progress" id="progBar"></div>
+    <div class="head-actions">
+      <button class="head-btn" onclick="openProjects()">📁 Projets</button>
+      <button class="head-btn" onclick="quickSave()">💾 Enregistrer</button>
+      <button class="head-btn" onclick="exportPNG()">🖼 Image</button>
+    </div>
+  </div>
+
+  <div class="panel-scroll" id="panelContent"></div>
+
+  <div class="panel-foot" id="panelFoot"></div>
+</div>
+
+<!-- ══════════════════ CANVAS ══════════════════ -->
+<div class="canvas-area">
+  <canvas id="c2d"></canvas>
+  <div id="c3d"></div>
+
+  <!-- Top toolbar -->
+  <div class="top-bar" id="topBar">
+    <button class="tb-btn active" id="tbMove" onclick="setTool('move')">✥ Naviguer</button>
+    <div class="tb-sep"></div>
+    <button class="tb-btn" id="tbPlace" onclick="setTool('place')" style="display:none">＋ Placer</button>
+    <button class="tb-btn" id="tbDelete" onclick="setTool('delete')">⌫ Effacer</button>
+    <div class="tb-sep"></div>
+    <button class="tb-btn" id="tbSnap" onclick="toggleSnap()" title="Aligner sur la grille au mètre">⊞ Aimant</button>
+  </div>
+
+  <div class="stats-chips" id="statsChips" style="display:none"></div>
+  <div class="place-hint" id="placeHint">Cliquez sur le plan pour placer l'élément</div>
+
+  <!-- View switch -->
+  <div class="view-switch" id="viewSwitch" style="display:none">
+    <button class="vs-btn active" onclick="setView('2d')" id="vs2d">Plan 2D</button>
+    <div class="vs-divider"></div>
+    <button class="vs-btn" onclick="setView('3d')" id="vs3d">Vue 3D</button>
+    <div class="vs-divider"></div>
+    <button class="vs-btn" onclick="setView('r3d')" id="vsr3d" style="color:var(--sage2)">3D+ réaliste</button>
+    <div class="vs-divider"></div>
+    <button class="vs-btn" onclick="openCalendar()" style="color:var(--gold)">📅 Entretien</button>
+  </div>
+
+  <div class="compass" id="compass" style="display:none">🧭</div>
+
+  <!-- Boussole du plan 2D (clic = nord en haut ; bouton du milieu maintenu = pivoter) -->
+  <div class="compass2d" id="compass2d" style="display:none" title="Orientation — flèche rouge = nord ; clic = aligner le plan sur le terrain ; bouton du milieu maintenu = pivoter" onclick="resetNorth()">
+    <div class="compass2d-rose" id="compass2dRose">
+      <span class="cd cd-n">N</span>
+      <span class="cd cd-e">E</span>
+      <span class="cd cd-s">S</span>
+      <span class="cd cd-o">O</span>
+    </div>
+  </div>
+
+  <!-- Tooltip -->
+  <div class="tooltip" id="tooltip"></div>
+
+  <!-- Calendar overlay -->
+  <div class="cal-overlay" id="calOverlay">
+    <div class="cal-inner">
+      <div class="cal-nav">
+        <button class="back-btn" onclick="closeCalendar()">← Retour au jardin</button>
+        <h2>Calendrier d'entretien</h2>
+      </div>
+      <div id="calContent"></div>
+    </div>
+  </div>
+
+  <!-- Growth projection slider (final view) -->
+  <div class="float-panel" id="growthPanel" style="display:none">
+    <div class="fp-title">🌱 Projection croissance</div>
+    <div class="fp-row">
+      <label>Années</label>
+      <input type="range" id="growthSlider" min="0" max="20" step="1" value="0" oninput="setGrowth(+this.value)">
+      <span class="val" id="growthVal">aujourd'hui</span>
+    </div>
+  </div>
+
+  <!-- Sun panel (realistic 3D) -->
+  <div class="float-panel" id="sunPanel" style="display:none">
+    <div class="fp-title">☀️ Ensoleillement</div>
+    <div class="fp-row">
+      <label>Heure</label>
+      <input type="range" id="sunHour" min="6" max="20" step="1" value="14" oninput="setSun()">
+      <span class="val" id="sunHourVal">14h</span>
+    </div>
+    <div class="fp-row">
+      <label>Mois</label>
+      <input type="range" id="sunMonth" min="1" max="12" step="1" value="6" oninput="setSun()">
+      <span class="val" id="sunMonthVal">Juin</span>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Projects modal -->
+<div class="modal-bg" id="projModal">
+  <div class="modal">
+    <h3>Projets</h3>
+    <div class="sub">Sauvegardez et rechargez vos jardins (stockés dans ce navigateur).</div>
+    <div class="field"><label style="font-size:11px;color:rgba(255,255,255,.45)">Nom du projet courant</label>
+      <input type="text" id="projNameInput" value="Mon jardin"></div>
+    <div style="display:flex;gap:8px;margin:12px 0">
+      <button class="btn btn-sage btn-sm" onclick="saveProjectAs()" style="flex:1">💾 Sauvegarder</button>
+      <button class="btn btn-ghost btn-sm" onclick="newGarden()" style="flex:1">✦ Nouveau</button>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <button class="btn btn-ghost btn-sm" onclick="exportJSON()" style="flex:1">⬇ Exporter .json</button>
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('importFile').click()" style="flex:1">⬆ Importer</button>
+    </div>
+    <div class="items-title" style="margin-bottom:6px">Projets enregistrés</div>
+    <div id="projList"></div>
+    <button class="btn btn-ghost" style="margin-top:14px" onclick="closeProjects()">Fermer</button>
+  </div>
+</div>
+<input type="file" id="importFile" accept=".json" style="display:none" onchange="importJSON(event)">
+
+<script src="js/data.js"></script>
+<script src="js/canvas2d.js"></script>
+<script src="js/three-basic.js"></script>
+<script src="js/three-realistic.js"></script>
+<script src="js/interactions.js"></script>
+<script src="js/calendar.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/elements.js"></script>
+<script src="js/sun.js"></script>
+<script src="js/persistence.js"></script>
+<script src="js/cadastre.js"></script>
+<script src="js/species-search.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

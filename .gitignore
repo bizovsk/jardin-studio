@@ -1,0 +1,16 @@
+# OS / éditeurs
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*~
+
+# Logs / temporaire
+*.log
+.cache/
+
+# Dépendances éventuelles (l'app n'en a pas pour l'instant)
+node_modules/
+
+# Config locale Claude Code (spécifique à la machine)
+.claude/settings.local.json
