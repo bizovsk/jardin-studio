@@ -446,3 +446,142 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border:none;border-ra
 }
 /* Pas de survol sur écrans tactiles : on n'affiche pas l'infobulle au doigt */
 @media (hover:none){#tooltip{display:none!important}}
+
+/* ══════════════════════════════════════════════
+   AR WebXR Overlay
+   (s'affiche par-dessus le flux caméra passthrough)
+   ══════════════════════════════════════════════ */
+.ar-overlay{
+  position:fixed;inset:0;z-index:2000;
+  display:flex;flex-direction:column;
+  pointer-events:none;   /* les touches traversent par défaut */
+  font-family:'Outfit',sans-serif;
+}
+.ar-overlay *{box-sizing:border-box}
+/* Les éléments interactifs récupèrent les événements */
+.ar-overlay button,.ar-overlay input,.ar-overlay label{pointer-events:auto}
+
+/* ── Zone haute : instruction + mini-carte ── */
+.ar-top{
+  display:flex;gap:8px;align-items:flex-start;
+  padding:48px 12px 0;   /* espace pour le bouton ✕ */
+}
+.ar-status-card{
+  flex:1;background:rgba(0,0,0,.68);backdrop-filter:blur(14px);
+  border:1px solid rgba(255,255,255,.12);border-radius:14px;
+  padding:12px 14px;color:#fff;pointer-events:auto;
+}
+.ar-step-lbl{
+  font-size:10px;letter-spacing:1.2px;text-transform:uppercase;
+  color:rgba(180,220,160,.75);margin-bottom:6px;
+}
+.ar-instr{
+  font-size:13px;line-height:1.6;color:rgba(255,255,255,.9);margin-bottom:10px;
+}
+.ar-instr strong{color:#c2e8a8}
+
+.ar-map-cv{
+  border-radius:10px;border:1px solid rgba(255,255,255,.14);
+  flex-shrink:0;pointer-events:none;
+}
+
+/* ── Centre : réticule ── */
+.ar-mid{
+  flex:1;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;pointer-events:none;
+}
+.ar-reticle{
+  width:48px;height:48px;border-radius:50%;
+  border:2px solid rgba(255,255,255,.35);
+  position:relative;opacity:.45;
+  transition:opacity .2s,border-color .2s,box-shadow .2s;
+}
+.ar-reticle::before,.ar-reticle::after{
+  content:'';position:absolute;background:rgba(255,255,255,.5);
+}
+.ar-reticle::before{width:1px;height:18px;left:50%;top:50%;transform:translate(-50%,-50%)}
+.ar-reticle::after {width:18px;height:1px;left:50%;top:50%;transform:translate(-50%,-50%)}
+.ar-reticle.ar-reticle-on{
+  opacity:1;border-color:#7ae880;
+  box-shadow:0 0 16px rgba(122,232,128,.55);
+}
+.ar-hit-pos{
+  margin-top:10px;font-size:11px;color:rgba(255,255,255,.65);
+  background:rgba(0,0,0,.45);border-radius:20px;padding:3px 12px;
+  min-height:20px;text-align:center;
+}
+
+/* ── Zone basse : actions ── */
+.ar-actions{padding:0 12px 16px;pointer-events:auto}
+
+.ar-card{
+  background:rgba(0,0,0,.72);backdrop-filter:blur(16px);
+  border:1px solid rgba(255,255,255,.12);border-radius:14px;
+  padding:14px 16px;color:#fff;
+}
+.ar-card-title{
+  font-size:14px;font-weight:600;color:#f4f0e8;margin-bottom:4px;
+}
+.ar-card-sub{
+  font-size:12px;color:rgba(255,255,255,.55);margin-bottom:10px;line-height:1.5;
+}
+.ar-row{display:flex;gap:8px;margin-bottom:8px}
+
+.ar-btn{
+  flex:1;padding:10px 12px;border-radius:9px;border:none;cursor:pointer;
+  background:rgba(122,158,114,.22);border:1px solid rgba(122,158,114,.38);
+  color:#c2d9bc;font-family:'Outfit',sans-serif;font-size:13px;font-weight:500;
+  transition:background .15s,color .15s;text-align:center;
+}
+.ar-btn:hover,.ar-btn:active{background:rgba(122,158,114,.45);color:#fff}
+.ar-btn:disabled{opacity:.38;cursor:default}
+.ar-btn-ghost{
+  display:block;width:100%;padding:8px;border-radius:8px;
+  border:1px solid rgba(255,255,255,.12);background:transparent;
+  color:rgba(255,255,255,.45);font-family:'Outfit',sans-serif;font-size:12px;
+  cursor:pointer;transition:background .15s;margin-top:4px;
+}
+.ar-btn-ghost:hover{background:rgba(255,255,255,.07);color:rgba(255,255,255,.7)}
+
+.ar-candidates{
+  display:flex;flex-direction:column;gap:4px;margin-bottom:8px;
+  max-height:200px;overflow-y:auto;
+}
+.ar-candidate{
+  display:flex;flex-direction:column;gap:1px;padding:8px 10px;
+  border-radius:7px;cursor:pointer;text-align:left;
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);
+  transition:background .15s;color:#fff;font-family:'Outfit',sans-serif;
+}
+.ar-candidate:hover{background:rgba(122,158,114,.25)}
+.ar-cname{font-size:13px;font-weight:500;color:#f4f0e8}
+.ar-csub {font-size:10.5px;color:rgba(255,255,255,.45);font-style:italic}
+
+.ar-input{
+  width:100%;padding:9px 12px;border-radius:8px;
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);
+  color:#fff;font-family:'Outfit',sans-serif;font-size:13px;outline:none;
+  margin-bottom:8px;
+}
+.ar-input:focus{border-color:rgba(122,158,114,.6)}
+.ar-input::placeholder{color:rgba(255,255,255,.3)}
+.ar-field{flex:1;display:flex;flex-direction:column;gap:4px}
+.ar-field label{font-size:11px;color:rgba(255,255,255,.5)}
+
+/* ── Bouton fermeture ── */
+.ar-close-btn{
+  position:absolute;top:10px;right:10px;
+  width:36px;height:36px;border-radius:50%;
+  background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.18);
+  color:rgba(255,255,255,.7);font-size:16px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  pointer-events:auto;transition:background .15s;
+  line-height:1;
+}
+.ar-close-btn:hover{background:rgba(200,60,60,.55);color:#fff}
+
+/* Sur petit écran la mini-carte se réduit */
+@media(max-width:760px){
+  .ar-map-cv{width:88px;height:88px}
+  .ar-top{padding-top:44px}
+}

@@ -62,6 +62,8 @@
     <button class="vs-btn" onclick="setView('r3d')" id="vsr3d" style="color:var(--sage2)">3D+ réaliste</button>
     <div class="vs-divider"></div>
     <button class="vs-btn" onclick="openCalendar()" style="color:var(--gold)">📅 Entretien</button>
+    <div class="vs-divider" id="vsARDiv" style="display:none"></div>
+    <button class="vs-btn" id="vsAR" style="display:none;color:#7ae880" onclick="startAR()">🌿 AR</button>
   </div>
 
   <div class="compass" id="compass" style="display:none">🧭</div>
@@ -74,6 +76,20 @@
       <span class="cd cd-s">S</span>
       <span class="cd cd-o">O</span>
     </div>
+  </div>
+
+  <!-- AR WebXR Overlay (affiché uniquement pendant la session AR) -->
+  <div id="arOverlay" class="ar-overlay" style="display:none">
+    <div class="ar-top">
+      <div id="arStatus" class="ar-status-card"></div>
+      <canvas id="arMapCv" class="ar-map-cv" width="110" height="110"></canvas>
+    </div>
+    <div class="ar-mid">
+      <div id="arReticle" class="ar-reticle"></div>
+      <div id="arHitPos" class="ar-hit-pos"></div>
+    </div>
+    <div id="arActions" class="ar-actions"></div>
+    <button class="ar-close-btn" onclick="stopAR()">✕</button>
   </div>
 
   <!-- Tooltip -->
@@ -155,6 +171,7 @@
 <script src="js/cadastre.js"></script>
 <script src="js/species-search.js"></script>
 <script src="js/plantnet.js"></script>
+<script src="js/ar-webxr.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>

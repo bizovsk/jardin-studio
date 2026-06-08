@@ -235,6 +235,12 @@ function renderPanel(){
     `;
     pf.innerHTML=`<button class="btn btn-ghost" onclick="jumpStep(0)">↩ Modifier</button>`;
     document.getElementById('viewSwitch').style.display='flex';
+    // Affiche le bouton AR si WebXR immersive-ar disponible (Android + HTTPS)
+    arInitBtn().then(()=>{
+      const btn=document.getElementById('vsAR');
+      const div=document.getElementById('vsARDiv');
+      if(btn&&div) div.style.display=btn.style.display;
+    });
     updateStats();
   }
 
